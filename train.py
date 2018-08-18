@@ -12,7 +12,7 @@ from glow.trainer import Trainer
 from glow.config import JsonConfig
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":0
     args = docopt(__doc__)
     hparams = args["<hparams>"]
     dataset = args["<dataset>"]
