@@ -3,7 +3,7 @@ Test the modules
 """
 import cv2
 import torch
-import tensorflow as tf
+# import tensorflow as tf
 import numpy as np
 from glow import thops
 from glow import modules
@@ -17,44 +17,44 @@ def is_equal(a, b, eps=1e-5):
     return max_delta < eps
 
 
-def test_multidim_sum():
-    x = np.random.rand(2, 3, 4, 4)
-    th_x = torch.Tensor(x)
-    tf_x = tf.constant(x)
-    test_axis_list = [[1], [1, 2], [0, 2, 3], [0, 1, 2, 3]]
-    with tf.Session():
-        print("[Test] multidim sum, compared with tensorflow")
-        for axis in test_axis_list:
-            for keep in [False, True]:
-                # tf
-                tf_y = tf.reduce_sum(tf_x, axis=axis, keepdims=keep)
-                tf_y = tf_y.eval()
-                # th
-                th_y = thops.sum(th_x, dim=axis, keepdim=keep).numpy()
-                if is_equal(th_y, tf_y):
-                    print("  Pass: dim={}, keepdim={}", axis, keep)
-                else:
-                    raise ValueError("sum with dim={} error".format(axis))
+# def test_multidim_sum():
+#     x = np.random.rand(2, 3, 4, 4)
+#     th_x = torch.Tensor(x)
+#     tf_x = tf.constant(x)
+#     test_axis_list = [[1], [1, 2], [0, 2, 3], [0, 1, 2, 3]]
+#     with tf.Session():
+#         print("[Test] multidim sum, compared with tensorflow")
+#         for axis in test_axis_list:
+#             for keep in [False, True]:
+#                 # tf
+#                 tf_y = tf.reduce_sum(tf_x, axis=axis, keepdims=keep)
+#                 tf_y = tf_y.eval()
+#                 # th
+#                 th_y = thops.sum(th_x, dim=axis, keepdim=keep).numpy()
+#                 if is_equal(th_y, tf_y):
+#                     print("  Pass: dim={}, keepdim={}", axis, keep)
+#                 else:
+#                     raise ValueError("sum with dim={} error".format(axis))
 
 
-def test_multidim_mean():
-    x = np.random.rand(2, 3, 4, 4)
-    th_x = torch.Tensor(x)
-    tf_x = tf.constant(x)
-    test_axis_list = [[1], [1, 2], [0, 2, 3], [0, 1, 2, 3]]
-    with tf.Session():
-        print("[Test] multidim mean, compared with tensorflow")
-        for axis in test_axis_list:
-            for keep in [False, True]:
-                # tf
-                tf_y = tf.reduce_mean(tf_x, axis=axis, keepdims=keep)
-                tf_y = tf_y.eval()
-                # th
-                th_y = thops.mean(th_x, dim=axis, keepdim=keep).numpy()
-                if is_equal(th_y, tf_y):
-                    print("  Pass: dim={}, keepdim={}", axis, keep)
-                else:
-                    raise ValueError("mean with dim={} error".format(axis))
+# def test_multidim_mean():
+#     x = np.random.rand(2, 3, 4, 4)
+#     th_x = torch.Tensor(x)
+#     tf_x = tf.constant(x)
+#     test_axis_list = [[1], [1, 2], [0, 2, 3], [0, 1, 2, 3]]
+#     with tf.Session():
+#         print("[Test] multidim mean, compared with tensorflow")
+#         for axis in test_axis_list:
+#             for keep in [False, True]:
+#                 # tf
+#                 tf_y = tf.reduce_mean(tf_x, axis=axis, keepdims=keep)
+#                 tf_y = tf_y.eval()
+#                 # th
+#                 th_y = thops.mean(th_x, dim=axis, keepdim=keep).numpy()
+#                 if is_equal(th_y, tf_y):
+#                     print("  Pass: dim={}, keepdim={}", axis, keep)
+#                 else:
+#                     raise ValueError("mean with dim={} error".format(axis))
 
 
 def test_actnorm():
@@ -118,9 +118,21 @@ def test_squeeze():
 
 def test_flow_net():
     print("[Test]: flow net")
-    net = models.FlowNet((64, 64, 3), 256, 16, 3)
-    x = torch.Tensor(np.random.rand(4, 3, 64, 64))
-    y, det = net(x)
+    net = models.FlowNet((32, 32, 1), 128, 4, 3)
+    x = torch.Tensor(np.random.rand(10, 1, 32, 32))
+
+    pixels = thops.pixels(x)
+    z = x + torch.normal(mean=torch.zeros_like(x),
+                         std=torch.ones_like(x) * (1. / 256.))
+
+    logdet = torch.zeros_like(x[:, 0, 0, 0])
+    print('init logdet shape =', logdet.size())
+    logdet += float(-np.log(256.) * pixels)
+    print('init logdet value =', logdet[0])
+
+
+    y, det = net(z,logdet)
+    print("det : ", det)
     x_ = net(y, reverse=True)
     print("z", y.size())
     print("x_", x_.size())
@@ -130,26 +142,51 @@ def test_flow_net():
 def test_glow():
     print("[Test]: Glow")
     from glow.config import JsonConfig
-    glow = models.Glow(JsonConfig("hparams_celeba.json"))
-    img = cv2.imread("tsuki.jpeg")
-    img = cv2.resize(img, (64, 64))
-    img = (img / 255.0).astype(np.float32)
-    img = img[:, :, ::-1].transpose(2, 0, 1)
-    x = torch.Tensor([img]*8)
-    y_onehot = torch.zeros((8, 40))
+    glow = models.Glow(JsonConfig("hparams/celeba_minist.json"))
+    # img = cv2.imread("pictures/tsuki.jpeg")
+    # img = cv2.resize(img, (32, 32))
+    # img = (img / 255.0).astype(np.float32)
+    # img = img[:, :, ::-1].transpose(2, 0, 1)
+    # x = torch.Tensor([img]*8)
+
+    x = torch.Tensor(np.random.rand(8, 1, 32, 32))
+    print('x.size = ', x.size())
+
+    batch_size = 8
+    nb_digits = 10
+    y = torch.LongTensor(batch_size).random_() % nb_digits
+    print('y = ',y)
+    print('y.view(-1,1) = ', y.view(-1,1))
+    y_onehot = torch.FloatTensor(batch_size, nb_digits)
+    y_onehot.zero_()
+    y_onehot.scatter_(1, y.view(-1,1), 1)
+    print('y_onehot:', y_onehot)
+
+
     z, det, y_logits = glow(x=x, y_onehot=y_onehot)
     print(z.size())
     print(det)
-    print(models.Glow.loss_generative(det))
 
+    print(models.Glow.loss_generative(det))
+    print('y_logits =  ',y_logits)
+    print(models.Glow.loss_class(y_logits,y))
 
 if __name__ == "__main__":
-    test_multidim_sum()
-    test_multidim_mean()
-    test_actnorm()
-    test_conv1x1()
-    test_gaussian()
-    test_flow_step()
-    test_squeeze()
-    test_flow_net()
+    # test_multidim_sum()
+    # test_multidim_mean()
+    # test_actnorm()
+    # test_conv1x1()
+    # test_gaussian()
+    # test_flow_step()
+    # test_squeeze()
+    # test_flow_net()
     test_glow()
+
+    # weight = torch.Tensor([1, 2, 1, 1, 10])
+    # loss_fn = torch.nn.CrossEntropyLoss()
+    # input = torch.randn(3, 5)  # (batch_size, C)
+    # target = torch.FloatTensor(3).random_(5).long()
+    # loss = loss_fn(input, target)
+    # print(input)
+    # print(target)
+    # print(loss)

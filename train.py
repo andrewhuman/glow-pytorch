@@ -12,11 +12,11 @@ from glow.trainer import Trainer
 from glow.config import JsonConfig
 
 
-if __name__ == "__main__":0
+if __name__ == "__main__":
     args = docopt(__doc__)
-    hparams = args["<hparams>"]
-    dataset = args["<dataset>"]
-    dataset_root = args["<dataset_root>"]
+    hparams = './hparams/celeba.json'
+    dataset = 'celeba'
+    dataset_root = '/home/huyu/workspace/dataset/celeba'
     assert dataset in vision.Datasets, (
         "`{}` is not supported, use `{}`".format(dataset, vision.Datasets.keys()))
     assert os.path.exists(dataset_root), (

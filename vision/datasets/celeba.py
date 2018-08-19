@@ -84,10 +84,11 @@ class CelebADataset(Dataset):
 
 if __name__ == "__main__":
     import cv2
-    celeba = CelebADataset("/home/chaiyujin/Downloads/Dataset/CelebA")
+    celeba = CelebADataset("/home/huyu/workspace/dataset/celeba")
     d = celeba[0]
     print(d["x"].size())
+    print(d['y_onehot'])
     img = d["x"].permute(1, 2, 0).contiguous().numpy()
     print(np.min(img), np.max(img))
-    cv2.imshow("img", img)
-    cv2.waitKey()
+    # cv2.imshow("img", img)
+    # cv2.waitKey()
