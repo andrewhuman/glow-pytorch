@@ -60,7 +60,7 @@ class CelebADataset(Dataset):
                                            transforms.CenterCrop(160),
                                            transforms.Resize(32),
                                            transforms.ToTensor()])):
-        super().__init__()
+        super(CelebADataset,self).__init__()
         dicts, attrs = _find_images_and_annotation(root_dir)
         self.data = dicts
         self.attrs = attrs

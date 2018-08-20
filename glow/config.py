@@ -1,3 +1,7 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import os
 import json
 import datetime
@@ -12,8 +16,8 @@ class JsonConfig(dict):
     Indent = 2
 
     def __init__(self, *argv, **kwargs):
-        super().__init__()
-        super().__setitem__("__name", "default")
+        super(JsonConfig,self).__init__()
+        super(JsonConfig,self).__setitem__("__name", "default")
         # check input
         assert len(argv) == 0 or len(kwargs) == 0, (
             "[JsonConfig]: Cannot initialize with"
@@ -28,7 +32,7 @@ class JsonConfig(dict):
             arg = kwargs
         # begin initialization
         if isinstance(arg, str):
-            super().__setitem__("__name",
+            super(JsonConfig,self).__setitem__("__name",
                                 os.path.splitext(os.path.basename(arg))[0])
             with open(arg, "r") as load_f:
                 arg = json.load(load_f)
@@ -38,7 +42,7 @@ class JsonConfig(dict):
                 value = arg[key]
                 if isinstance(value, dict):
                     value = JsonConfig(value)
-                super().__setitem__(key, value)
+                super(JsonConfig,self).__setitem__(key, value)
         else:
             raise TypeError(("[JsonConfig]: Do not support given input"
                              " with type {}").format(type(arg)))
@@ -50,7 +54,7 @@ class JsonConfig(dict):
         raise Exception("[JsonConfig]: Can't set constant key {}".format(item))
 
     def __getattr__(self, attr):
-        return super().__getitem__(attr)
+        return super(JsonConfig,self).__getitem__(attr)
 
     def __str__(self):
         return self.__to_string("", 0)
@@ -76,17 +80,17 @@ class JsonConfig(dict):
             v = b[k]
             if k in self:
                 if isinstance(v, JsonConfig):
-                    super().__setitem__(k, self[k] + v)
+                    super(JsonConfig,self).__setitem__(k, self[k] + v)
                 else:
                     if k == "__name":
-                        super().__setitem__(k, self[k] + "&" + v)
+                        super(JsonConfig,self).__setitem__(k, self[k] + "&" + v)
                     else:
                         assert v == self[k], (
                             "[JsonConfig]: Two config conflicts at"
                             "`{}`, {} != {}".format(k, self[k], v))
             else:
                 # new key, directly add
-                super().__setitem__(k, v)
+                super(JsonConfig,self).__setitem__(k, v)
         return self
 
     def date_name(self):
@@ -94,7 +98,7 @@ class JsonConfig(dict):
         date = date[:date.rfind(":")].replace("-", "")\
                                      .replace(":", "")\
                                      .replace(" ", "_")
-        return date + "_" + super().__getitem__("__name") + ".json"
+        return date + "_" + super(JsonConfig,self).__getitem__("__name") + ".json"
 
     def dump(self, dir_path, json_name=None):
         if json_name is None:

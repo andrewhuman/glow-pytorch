@@ -1,6 +1,11 @@
 """
 Test the modules
 """
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import cv2
 import torch
 # import tensorflow as tf
@@ -142,7 +147,7 @@ def test_flow_net():
 def test_glow():
     print("[Test]: Glow")
     from glow.config import JsonConfig
-    glow = models.Glow(JsonConfig("hparams/celeba_minist.json"))
+    glow = models.Glow(JsonConfig("hparams/celeba_test.json"))
     # img = cv2.imread("pictures/tsuki.jpeg")
     # img = cv2.resize(img, (32, 32))
     # img = (img / 255.0).astype(np.float32)

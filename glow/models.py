@@ -34,7 +34,7 @@ class FlowStep(nn.Module):
         assert flow_permutation in FlowStep.FlowPermutation,\
             "float_permutation should be in `{}`".format(
                 FlowStep.FlowPermutation.keys())
-        super().__init__()
+        super(FlowStep,self).__init__()
         self.flow_permutation = flow_permutation
         self.flow_coupling = flow_coupling
         # 1. actnorm
@@ -115,7 +115,7 @@ class FlowNet(nn.Module):
                |          (L - 1)          |
                + --------------------------+
         """
-        super().__init__()
+        super(FlowNet,self).__init__()
         self.layers = nn.ModuleList()
         self.output_shapes = []
         self.K = K
@@ -185,7 +185,7 @@ class Glow(nn.Module):
     CE = nn.CrossEntropyLoss()
 
     def __init__(self, hparams):
-        super().__init__()
+        super(Glow,self).__init__()
         self.flow = FlowNet(image_shape=hparams.Glow.image_shape,
                             hidden_channels=hparams.Glow.hidden_channels,
                             K=hparams.Glow.K,
@@ -208,11 +208,11 @@ class Glow(nn.Module):
             self.project_class = modules.LinearZeros(
                 C, hparams.Glow.y_classes)
         # register prior hidden
-        num_device = len(utils.get_proper_device(hparams.Device.glow, False))
-        assert hparams.Train.batch_size % num_device == 0
+        # num_device = len(utils.get_proper_device(hparams.Device.glow, False))
+        # assert hparams.Train.batch_size % num_device == 0
         self.register_parameter(
             "prior_h",
-            nn.Parameter(torch.zeros([hparams.Train.batch_size // num_device,
+            nn.Parameter(torch.zeros([hparams.Train.batch_size, # // num_device
                                       self.flow.output_shapes[-1][1] * 2,
                                       self.flow.output_shapes[-1][2],
                                       self.flow.output_shapes[-1][3]])))
@@ -225,18 +225,24 @@ class Glow(nn.Module):
         B, C = self.prior_h.size(0), self.prior_h.size(1)
         h = self.prior_h.detach().clone()
         assert torch.sum(h) == 0.0
+        # print('torch.sum(h) init = ', torch.sum(h))
         # print('h sum = ', torch.sum(h))
         if self.hparams.Glow.learn_top:
             h = self.learn_top(h)
+            # print('self.learn_top.weight.data = ',self.learn_top.weight.data)
+            # print('after learn_top ,torch.sum(h) = ', torch.sum(h))
             # print('learn_top h size = ', h.size())
         if self.hparams.Glow.y_condition:
             assert y_onehot is not None
             # print('y_onehot size = ',y_onehot.size())
             # print('self.project_ycond weight size = ',self.project_ycond.weight.size())
 
-
+            # y_onehot = [batch ,class] , weight = [class , 2c], yp = [b,2c] , 2c = C
             yp = self.project_ycond(y_onehot).view(B, C, 1, 1)
+
             h += yp
+            # print('after y_condition ,torch.sum(h) = ', torch.sum(h))
+
 
             # print('y_condition h size = ', h.size())
         return thops.split_feature(h, "split")
@@ -262,6 +268,8 @@ class Glow(nn.Module):
 
         # prior
         mean, logs = self.prior(y_onehot)
+        # print('after prior mean = ',mean)
+        # print('after prior logs = ', logs)
         objective += modules.GaussianDiag.logp(mean, logs, z)
 
         if self.hparams.Glow.y_condition:

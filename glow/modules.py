@@ -16,7 +16,7 @@ class _ActNorm(nn.Module):
     """
 
     def __init__(self, num_features, scale=1.):
-        super().__init__()
+        super(_ActNorm,self).__init__()
         # register mean and scale
         size = [1, num_features, 1, 1]
         self.register_parameter("bias", nn.Parameter(torch.zeros(*size)))
@@ -82,7 +82,7 @@ class _ActNorm(nn.Module):
 
 class ActNorm2d(_ActNorm):
     def __init__(self, num_features, scale=1.):
-        super().__init__(num_features, scale)
+        super(ActNorm2d,self).__init__(num_features, scale)
 
     def _check_input_dim(self, input):
         assert len(input.size()) == 4
@@ -94,7 +94,7 @@ class ActNorm2d(_ActNorm):
 
 class LinearZeros(nn.Linear):
     def __init__(self, in_channels, out_channels, logscale_factor=3):
-        super().__init__(in_channels, out_channels)
+        super(LinearZeros,self).__init__(in_channels, out_channels)
         self.logscale_factor = logscale_factor
         # set logs parameter
         self.register_parameter("logs", nn.Parameter(torch.zeros(out_channels)))
@@ -103,7 +103,7 @@ class LinearZeros(nn.Linear):
         self.bias.data.zero_()
 
     def forward(self, input):
-        output = super().forward(input)
+        output = super(LinearZeros,self).forward(input)
         return output * torch.exp(self.logs * self.logscale_factor)
 
 
@@ -132,7 +132,7 @@ class Conv2d(nn.Conv2d):
                  kernel_size=[3, 3], stride=[1, 1],
                  padding="same", do_actnorm=True, weight_std=0.05):
         padding = Conv2d.get_padding(padding, kernel_size, stride)
-        super().__init__(in_channels, out_channels, kernel_size, stride,
+        super(Conv2d,self).__init__(in_channels, out_channels, kernel_size, stride,
                          padding, bias=(not do_actnorm))
         # init weight with std
         self.weight.data.normal_(mean=0.0, std=weight_std)
@@ -143,7 +143,7 @@ class Conv2d(nn.Conv2d):
         self.do_actnorm = do_actnorm
 
     def forward(self, input):
-        x = super().forward(input)
+        x = super(Conv2d,self).forward(input)
         if self.do_actnorm:
             x, _ = self.actnorm(x)
         return x
@@ -154,7 +154,7 @@ class Conv2dZeros(nn.Conv2d):
                  kernel_size=[3, 3], stride=[1, 1],
                  padding="same", logscale_factor=3):
         padding = Conv2d.get_padding(padding, kernel_size, stride)
-        super().__init__(in_channels, out_channels, kernel_size, stride, padding)
+        super(Conv2dZeros,self).__init__(in_channels, out_channels, kernel_size, stride, padding)
         # logscale_factor
         self.logscale_factor = logscale_factor
         self.register_parameter("logs", nn.Parameter(torch.zeros(out_channels, 1, 1)))
@@ -163,13 +163,13 @@ class Conv2dZeros(nn.Conv2d):
         self.bias.data.zero_()
 
     def forward(self, input):
-        output = super().forward(input)
+        output = super(Conv2dZeros,self).forward(input)
         return output * torch.exp(self.logs * self.logscale_factor)
 
 
 class Permute2d(nn.Module):
     def __init__(self, num_channels, shuffle):
-        super().__init__()
+        super(Permute2d,self).__init__()
         self.num_channels = num_channels
         self.indices = np.arange(self.num_channels - 1, -1, -1).astype(np.long)
         self.indices_inverse = np.zeros((self.num_channels), dtype=np.long)
@@ -193,7 +193,7 @@ class Permute2d(nn.Module):
 
 class InvertibleConv1x1(nn.Module):
     def __init__(self, num_channels, LU_decomposed=False):
-        super().__init__()
+        super(InvertibleConv1x1,self).__init__()
         w_shape = [num_channels, num_channels]
         w_init = np.linalg.qr(np.random.randn(*w_shape))[0].astype(np.float32)
         if not LU_decomposed:
@@ -289,7 +289,7 @@ class GaussianDiag:
 
 class Split2d(nn.Module):
     def __init__(self, num_channels):
-        super().__init__()
+        super(Split2d,self).__init__()
         self.conv = Conv2dZeros(num_channels // 2, num_channels)
 
     def split2d_prior(self, z):
@@ -345,7 +345,7 @@ def unsqueeze2d(input, factor=2):
 
 class SqueezeLayer(nn.Module):
     def __init__(self, factor):
-        super().__init__()
+        super(SqueezeLayer,self).__init__()
         self.factor = factor
 
     def forward(self, input, logdet=None, reverse=False):

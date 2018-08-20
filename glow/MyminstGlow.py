@@ -2,7 +2,7 @@ class MinistGlow(nn.Module):
     BCE = nn.BCEWithLogitsLoss()
     CE = nn.CrossEntropyLoss()
     def __init__(self):
-        super().__init__()
+        super(MinistGlow,self).__init__()
         self.flow = FlowNet(image_shape=[32,32,1],
                             hidden_channels=128,
                             K=8,
